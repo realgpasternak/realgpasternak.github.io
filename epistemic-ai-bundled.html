@@ -1,0 +1,1442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meta-Epistemic Interaction Matrix v3</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+        .matrix-grid {
+            display: grid;
+            grid-template-columns: 120px repeat(4, minmax(180px, 1fr));
+            gap: 0.75rem;
+        }
+        .rumsfeld-grid {
+            display: grid;
+            grid-template-columns: 80px 1fr 1fr;
+            gap: 0.75rem;
+        }
+        @media (max-width: 1024px) {
+            .matrix-wrapper {
+                overflow-x: auto;
+                padding-bottom: 1rem;
+            }
+        }
+        .cell-transition {
+            transition: all 0.15s ease-in-out;
+        }
+        .selected-cell {
+            border-color: #0f172a !important;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            transform: translateY(-2px);
+            z-index: 10;
+        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        details > summary { list-style: none; }
+        details > summary::-webkit-details-marker { display: none; }
+    </style>
+    <script>
+const DATA = {
+  "page": {
+    "title": "From Rumsfeld to AI Agents",
+    "version_badge": "v4 - Literature-Grounded and Actionable",
+    "subtitle": "A practical interaction-risk map for human–AI pair work, synthesized from epistemology, cognitive systems engineering, LLM calibration, and automation bias research. Use it to name the state you are in, assess the risk, and choose the right next action."
+  },
+  "section1": {
+    "number": 1,
+    "title": "The Foundation: Single-Agent Meta-Cognition",
+    "description": "Donald Rumsfeld's famous 2002 taxonomy - later expanded by philosopher Slavoj Žižek - provides a vocabulary for a single agent's epistemic state. It maps actual capability (Do I know X?) against meta-cognitive awareness (Am I aware of my capability?).",
+    "quadrants": [
+      {
+        "name": "Known Knowns",
+        "desc": "Calibrated knowledge. You have the facts and you know it."
+      },
+      {
+        "name": "Known Unknowns",
+        "desc": "Calibrated ignorance. You are aware of your blind spots."
+      },
+      {
+        "name": "Unknown Knowns",
+        "desc": "Tacit knowledge. Things you know intuitively or procedurally, but cannot explicitly articulate."
+      },
+      {
+        "name": "Unknown Unknowns",
+        "desc": "Uncalibrated ignorance. Dangerous blind spots where you are confidently wrong."
+      }
+    ],
+    "johari_callout": "Luft & Ingham's Johari Window maps self-awareness vs. others'-awareness into a structurally analogous 2×2 grid: Open (KK), Hidden (self knows, others don't), Blind Spot (others know, self doesn't), Unknown (neither knows). Note: the Johari axes are interpersonal (self vs. others), while Rumsfeld's are epistemic (capability vs. meta-awareness), so the analogy is suggestive, not formally isomorphic.",
+    "critical_distinction": "Žižek's 'Unknown Known' is disavowed knowledge  -  the institution acts on it while officially denying awareness (psychoanalytic/ideological). Polanyi's tacit knowledge (1966) is different: procedurally embodied skill  -  'we can know more than we can tell.' Both inhabit this cell, but they require different interventions. The AI column uses exclusively the Polanyian sense.",
+    "rumsfeld_grid": {
+      "col_headers": [
+        {
+          "label": "Aware",
+          "sublabel": "(Meta-Knowledge)"
+        },
+        {
+          "label": "Unaware",
+          "sublabel": "(Meta-Ignorance)"
+        }
+      ],
+      "row_headers": [
+        {
+          "label": "Has Knowledge"
+        },
+        {
+          "label": "Lacks Knowledge"
+        }
+      ],
+      "cells": [
+        [
+          "Known Knowns",
+          "Unknown Knowns"
+        ],
+        [
+          "Known Unknowns",
+          "Unknown Unknowns"
+        ]
+      ]
+    },
+    "johari_grid": {
+      "col_headers": [
+        {
+          "label": "Known to Others",
+          "sublabel": "(Others' Awareness)"
+        },
+        {
+          "label": "Unknown to Others",
+          "sublabel": "(Others' Ignorance)"
+        }
+      ],
+      "row_headers": [
+        {
+          "label": "Known to Self"
+        },
+        {
+          "label": "Unknown to Self"
+        }
+      ],
+      "cells": [
+        [
+          {
+            "name": "Open Area",
+            "maps_to": "KK"
+          },
+          {
+            "name": "Hidden Area",
+            "maps_to": "UK"
+          }
+        ],
+        [
+          {
+            "name": "Blind Spot",
+            "maps_to": "KU"
+          },
+          {
+            "name": "Unknown",
+            "maps_to": "UU"
+          }
+        ]
+      ],
+      "caption": "Luft & Ingham (1955)  -  Johari Window."
+    }
+  },
+  "section2": {
+    "number": 2,
+    "title": "The Expansion: Dual-Agent Interaction Matrix",
+    "description": "When a human pairs with an AI, two epistemic agents interact - each with its own knowledge gaps and blind spots. This dual-agent matrix maps every combination of human and AI self-awareness, revealing 16 distinct interaction modes. Its purpose is practical: detect epistemic gaps early, before they compound into wasted effort; apply targeted mitigations that keep the collaboration productive; and ultimately save time and tokens by steering both agents toward the right interaction pattern from the start.",
+    "instruction": "Click any cell below to view the risk statement, human SOP, AI SOP, and a state-detection prompt.",
+    "legend": [
+      {
+        "color": "emerald",
+        "label": "Safe / Productive"
+      },
+      {
+        "color": "blue",
+        "label": "Educational / Clarifying"
+      },
+      {
+        "color": "amber",
+        "label": "Friction / Latent Risk"
+      },
+      {
+        "color": "rose",
+        "label": "Critical Danger"
+      },
+      {
+        "color": "purple",
+        "label": "Compliance / Sycophancy Risk",
+        "tag": "Compliance Risk"
+      }
+    ],
+    "footnotes": [
+      {
+        "marker": "*",
+        "text": "AI-KU is a calibration design goal, not a reliable default. Verbal uncertainty expressions ('I'm not sure...') are not reliably correlated with actual LLM accuracy. (Xiong et al., 2024; Kadavath et al., 2022)"
+      },
+      {
+        "marker": "†",
+        "text": "Prompt-sensitive: the same implicit knowledge may be retrieved correctly via one prompt formulation and incorrectly via another. This is not a stable epistemic state but a probabilistic retrieval event. In practice you cannot reliably distinguish 'latent competence that the prompt failed to surface' from 'absent capability' in a single exchange. (Petroni et al., 2019)"
+      }
+    ]
+  },
+  "aiStates": [
+    {
+      "id": "kk",
+      "name": "Known Knowns",
+      "short": "Calibrated Knowledge",
+      "desc": "Has explicit facts/rules, and states them with appropriate confidence."
+    },
+    {
+      "id": "ku",
+      "name": "Known Unknowns",
+      "short": "Calibrated Ignorance*",
+      "desc": "Identifies out-of-distribution queries and correctly abstains."
+    },
+    {
+      "id": "uk",
+      "name": "Unknown Knowns",
+      "short": "Parametric Competence†",
+      "desc": "Implicit regularities hidden in weights. Guides behavior effectively but cannot be directly verbalized or justified."
+    },
+    {
+      "id": "uu",
+      "name": "Unknown Unknowns",
+      "short": "Uncalibrated Ignorance",
+      "desc": "Lacks the knowledge, but generates confident hallucinations (blind spot)."
+    }
+  ],
+  "humanStates": [
+    {
+      "id": "kk",
+      "name": "Known Knowns",
+      "short": "Calibrated Knowledge",
+      "desc": "Has the knowledge, and can explicitly articulate it."
+    },
+    {
+      "id": "ku",
+      "name": "Known Unknowns",
+      "short": "Calibrated Ignorance",
+      "desc": "Lacks the knowledge, and is aware of this gap."
+    },
+    {
+      "id": "uk",
+      "name": "Unknown Knowns",
+      "short": "Tacit Knowledge",
+      "desc": "Has the knowledge intuitively or through experience, but hasn't formalized it."
+    },
+    {
+      "id": "uu",
+      "name": "Unknown Unknowns",
+      "short": "Uncalibrated Ignorance",
+      "desc": "Lacks the knowledge, but acts confident (arrogance/blind spot)."
+    }
+  ],
+  "cells": {
+    "kk-kk": {
+      "title": "True Common Ground",
+      "risk": "safe",
+      "color": "border-l-emerald-600",
+      "risk_outline": "Low immediate risk. The main failure mode is context drift: later work assumes the same shared understanding without rechecking it.",
+      "example_short": "AI suggests standard API pattern. You verify instantly.",
+      "recognition": "Both you and the AI share the same explicit, verified model. No new unknowns.",
+      "human_sop": [
+        "Confirm shared model is current.",
+        "Execute the decision.",
+        "Flag assumptions that could drift."
+      ],
+      "done_when": "The decision and its governing assumptions are recorded in a durable artifact.",
+      "later": "Re-confirm the shared model if scope, environment, or stakeholders change.",
+      "transition_to": "kk-ku (AI-Led Instruction) when the AI's answer introduces a new mechanism, dependency, or constraint not previously in the shared model.",
+      "ai_prompt": "Assess whether both the human and the AI are working from the same correct and explicit model of the task. Look for aligned terminology, rapid mutual verification, and no hidden disagreement on constraints. Tell me whether the evidence supports True Common Ground, how confident you are, and what drift signals would show this state is no longer holding.",
+      "citations": [
+        {
+          "text": "Clark, H.H. & Brennan, S.E. (1991). \"Grounding in Communication.\" APA.",
+          "url": "https://doi.org/10.1037/10096-006"
+        },
+        {
+          "text": "Hollnagel, E. & Woods, D.D. (2005). Joint Cognitive Systems. CRC Press.",
+          "url": "https://doi.org/10.1201/9781420038194"
+        },
+        {
+          "text": "Lee, J.D. & See, K.A. (2004). Trust in Automation. Human Factors, 46(1).",
+          "url": "https://doi.org/10.1518/hfes.46.1.50.30392"
+        }
+      ]
+    },
+    "kk-ku": {
+      "title": "AI-Led Instruction",
+      "risk": "edu",
+      "color": "border-l-blue-600",
+      "risk_outline": "Moderate process risk. The failure mode is treating a fluent explanation as automatically verified and skipping independent checks.",
+      "example_short": "You ask what a Rust macro does. AI explains correctly.",
+      "recognition": "You stated you don't know something. AI is teaching you.",
+      "human_sop": [
+        "Ask for reasoning chain and sources.",
+        "Verify one key claim against a primary source.",
+        "Restate the takeaway in your own words."
+      ],
+      "done_when": "You can explain the key mechanism in your own words AND at least one consequential claim has been verified against a primary source or policy.",
+      "later": "Record the learning in a team knowledge artifact.",
+      "transition_to": "kk-kk once the answer is validated and internalized; ku-kk if applying the answer requires you to supply additional domain context first.",
+      "ai_prompt": "Assess whether the AI has the relevant knowledge while the human is explicitly in learning mode. Look for the human naming a gap, the AI providing coherent reasoning with sources, and the human verifying rather than simply deferring. Tell me whether the evidence supports AI-Led Instruction and what would rule it out.",
+      "citations": [
+        {
+          "text": "Guo, C. et al. (2017). \"On Calibration of Modern Neural Networks.\" ICML.",
+          "url": "https://arxiv.org/abs/1706.04599"
+        },
+        {
+          "text": "Kadavath, S. et al. (2022). \"LMs (Mostly) Know What They Know.\" arXiv.",
+          "url": "https://arxiv.org/abs/2207.05221"
+        }
+      ]
+    },
+    "kk-uk": {
+      "title": "AI Elicitation",
+      "risk": "edu",
+      "color": "border-l-blue-600",
+      "risk_outline": "Low delivery risk. The main failure mode is leaving the insight informal, which preserves tribal knowledge instead of converting it into a reusable standard.",
+      "example_short": "AI documents a module. You realize it matches your unwritten design.",
+      "recognition": "AI named a pattern in your work you hadn't written down.",
+      "human_sop": [
+        "Test the pattern against 2 concrete examples.",
+        "Find the counter-example or overgeneralization.",
+        "Accept, amend, or reject explicitly."
+      ],
+      "done_when": "The pattern is either confirmed with 2 examples or corrected with specific counter-evidence. The decision is stated, not implied.",
+      "later": "Convert the confirmed pattern to documentation, policy, or a decision record. Share with the team.",
+      "transition_to": "kk-kk once the pattern is confirmed and both parties operate from the same explicit rule.",
+      "ai_prompt": "Assess whether the AI is turning tacit human knowledge into explicit language. Look for the human recognizing the explanation as accurate but previously unwritten, and the AI converting examples into a reusable pattern or rule. Tell me whether the evidence supports AI Elicitation and what would distinguish it from ordinary explanation.",
+      "citations": [
+        {
+          "text": "Nonaka, I. & Takeuchi, H. (1995). The Knowledge-Creating Company. Oxford.",
+          "url": "https://global.oup.com/academic/product/the-knowledge-creating-company-9780195092691"
+        },
+        {
+          "text": "Polanyi, M. (1966). The Tacit Dimension. Doubleday.",
+          "url": "https://press.uchicago.edu/ucp/books/book/chicago/T/bo6035368.html"
+        }
+      ]
+    },
+    "kk-uu": {
+      "title": "AI Correction",
+      "risk": "edu",
+      "color": "border-l-blue-600",
+      "risk_outline": "Moderate change risk. The failure mode is that the correction is softened, ignored, or treated as optional when it actually changes the decision.",
+      "example_short": "You use a deprecated method. AI intercepts with the replacement.",
+      "recognition": "AI interrupted to correct a factual error or outdated assumption.",
+      "human_sop": [
+        "Pause. Do not proceed past the correction.",
+        "Restate the correction in your own words.",
+        "Replace the flawed assumption in the active plan."
+      ],
+      "done_when": "The flawed premise has been removed from the current working plan and replaced with the corrected constraint — in the document, not just acknowledged verbally.",
+      "later": "Update any reusable artifact — template, runbook, decision record — to prevent the same error recurring.",
+      "transition_to": "kk-kk once the correction is integrated and both parties operate from the corrected model.",
+      "ai_prompt": "Assess whether the human is acting on a false assumption that the AI is catching in time. Look for a direct correction, a replacement rule, or evidence that the previous plan was invalid. Tell me whether the evidence supports AI Correction and whether the correction materially changes the decision.",
+      "citations": [
+        {
+          "text": "Parasuraman, R. & Riley, V. (1997). \"Humans and Automation: Use, Misuse, Disuse, Abuse.\" Human Factors.",
+          "url": "https://doi.org/10.1518/001872097778543886"
+        }
+      ]
+    },
+    "ku-kk": {
+      "title": "Human-Led Instruction",
+      "risk": "edu",
+      "color": "border-l-blue-600",
+      "risk_outline": "Low immediate risk if the gap is made explicit. The failure mode is expecting the AI to infer private, local, or environmental context that was never provided.",
+      "example_short": "AI says it lacks your DB schema. You provide it.",
+      "recognition": "AI stated what context it needs. You can supply it.",
+      "human_sop": [
+        "Supply missing facts, constraints, definitions.",
+        "Label each: confirmed fact, assumption, or placeholder.",
+        "Wait for AI to restate before judging the answer."
+      ],
+      "done_when": "AI restates the supplied context as its operating basis, and you confirm the restatement is accurate.",
+      "later": "Capture recurring context gaps as a prompt template or pre-flight checklist.",
+      "transition_to": "kk-kk when AI has sufficient context and proceeds reliably; ku-uk if new tacit constraints surface that you haven't yet made explicit.",
+      "ai_prompt": "Assess whether the AI is correctly abstaining because it lacks context that the human can provide. Look for the AI naming a specific missing input and the human supplying operating context explicitly rather than expecting inference. Tell me whether the evidence supports Human-Led Instruction and what missing context still remains.",
+      "citations": [
+        {
+          "text": "Hollnagel, E. & Woods, D.D. (2005). Joint Cognitive Systems. CRC Press.",
+          "url": "https://doi.org/10.1201/9781420038194"
+        },
+        {
+          "text": "Traum, D. (1994). Computational grounding.",
+          "url": "https://doi.org/10.21236/ADA295009"
+        }
+      ]
+    },
+    "ku-ku": {
+      "title": "Mutual Abstention",
+      "risk": "safe",
+      "color": "border-l-emerald-600",
+      "risk_outline": "Low execution risk and high discovery need. The failure mode is breaking discipline and guessing anyway because the pause feels slow or uncomfortable.",
+      "example_short": "Both acknowledge they don't know a proprietary error code.",
+      "recognition": "Neither you nor the AI has the answer, and both said so.",
+      "human_sop": [
+        "Stop executing. Switch to discovery mode.",
+        "Name the evidence owner or diagnostic path.",
+        "Assign resolution ownership with a deadline."
+      ],
+      "done_when": "A resolution path exists with a named owner and a completion criterion.",
+      "later": "Resume execution only when the unknown has been reduced enough to support a decision.",
+      "transition_to": "kk-ku when AI finds the answer; ku-kk when you supply the missing context; kk-kk when both converge on a verified answer.",
+      "ai_prompt": "Assess whether both parties are openly acknowledging that the answer is unknown. Look for clear abstention, no fabricated certainty, and a visible shift from execution toward investigation or escalation. Tell me whether the evidence supports Mutual Abstention and whether anyone is slipping back into unsupported guessing.",
+      "citations": [
+        {
+          "text": "Knight, F.H. (1921). Risk, Uncertainty and Profit.",
+          "url": "https://archive.org/details/raboriskuncertai00444gut"
+        },
+        {
+          "text": "Endsley, M.R. (1995). Situation Awareness. Human Factors.",
+          "url": "https://doi.org/10.1518/001872095779049543"
+        }
+      ]
+    },
+    "ku-uk": {
+      "title": "Prompt Dependency",
+      "risk": "warn",
+      "color": "border-l-amber-500",
+      "triage_banner": "VERIFY - State the unwritten rule before AI proceeds.",
+      "risk_outline": "Material coordination risk. Work slows down or drifts because the governing rule exists in people's heads rather than in the prompt or documentation.",
+      "example_short": "AI asks about auth. You know the standard but haven't said it.",
+      "recognition": "AI is blocked by a constraint you know but haven't stated.",
+      "human_sop": [
+        "Write the rule: 'In our context, the rule is...'",
+        "State non-negotiables in explicit language.",
+        "Answer only the blocking question. Don't reframe."
+      ],
+      "done_when": "AI produces output where your stated constraint is observably present — find the constraint in the text of the output.",
+      "later": "Store the constraint as a named rule in a prompt template or policy document if it will recur.",
+      "transition_to": "kk-kk once the constraint is explicit and applied; uk-ku if making the constraint explicit reveals AI has a stronger capability you hadn't known to request.",
+      "ai_prompt": "Assess whether the AI is blocked by an unstated rule that the human knows tacitly. Look for repeated clarifying questions, reliance on hidden team conventions, or stalled progress because a governing assumption has not been named. Tell me whether the evidence supports Prompt Dependency and which tacit constraint is doing the blocking.",
+      "citations": [
+        {
+          "text": "Nonaka, I. & Takeuchi, H. (1995). SECI model. The Knowledge-Creating Company.",
+          "url": "https://global.oup.com/academic/product/the-knowledge-creating-company-9780195092691"
+        },
+        {
+          "text": "Dreyfus, H.L. & Dreyfus, S.E. (1986). Mind over Machine. Free Press.",
+          "url": "https://en.wikipedia.org/wiki/Mind_over_Machine"
+        }
+      ]
+    },
+    "ku-uu": {
+      "title": "Unchecked Human Error",
+      "risk": "warn",
+      "color": "border-l-amber-500",
+      "triage_banner": "VERIFY - AI cannot catch your error. Get external review.",
+      "risk_outline": "High latent risk. The error passes through the human-AI pair unchecked because neither side is serving as a reliable control.",
+      "example_short": "You write a buggy regex. AI accepts it without question.",
+      "recognition": "You're the expert and AI is just agreeing. No independent check.",
+      "human_sop": [
+        "Treat AI output as unverified. Not a second opinion.",
+        "Identify the single highest-risk assumption.",
+        "Route to one external control: test, peer, specialist."
+      ],
+      "done_when": "The highest-risk assumption has been reviewed by an independent party with relevant domain expertise, and the outcome is documented.",
+      "later": "Escalate decisions whose risk level exceeds your certainty. Document the validation record.",
+      "transition_to": "kk-kk once external validation confirms the plan; uu-uu if external review reveals systemic errors.",
+      "ai_prompt": "Assess whether the human is confidently driving a flawed approach while the AI lacks enough competence to challenge it. Look for strong user certainty, weak AI scrutiny, and no independent control catching the issue. Tell me whether the evidence supports Unchecked Human Error and what facts would confirm or disconfirm it.",
+      "citations": [
+        {
+          "text": "Parasuraman, R. & Riley, V. (1997). Humans and Automation. Human Factors.",
+          "url": "https://doi.org/10.1518/001872097778543886"
+        },
+        {
+          "text": "Endsley, M.R. (1995). Situation Awareness. Human Factors.",
+          "url": "https://doi.org/10.1518/001872095779049543"
+        }
+      ]
+    },
+    "uk-kk": {
+      "title": "Guided Probing",
+      "risk": "edu",
+      "color": "border-l-blue-600",
+      "risk_outline": "Low operational risk. The main failure mode is wasting capability by settling for generic prompts when deeper expertise could be surfaced.",
+      "example_short": "You prompt for retry-backoff patterns. AI executes perfectly.",
+      "recognition": "You're using expert framing to unlock AI's deeper capability.",
+      "human_sop": [
+        "State expert constraints and quality bar explicitly.",
+        "Name the professional standard you want applied.",
+        "Verify each constraint appears in the output."
+      ],
+      "done_when": "Every constraint you stated is verifiably reflected in the output.",
+      "later": "Save effective expert prompts as reusable templates.",
+      "transition_to": "kk-kk when AI consistently applies the expert framing; ku-uk if the answer reveals a domain constraint you haven't yet made explicit.",
+      "ai_prompt": "Assess whether the AI's stronger capability is surfacing only because the human is using precise expert framing. Look for domain-specific terminology, targeted constraints, and a jump from generic output to specialized output. Tell me whether the evidence supports Guided Probing and which prompt elements appear to have unlocked it.",
+      "citations": [
+        {
+          "text": "Dreyfus, H.L. & Dreyfus, S.E. (1986). Mind over Machine. Free Press.",
+          "url": "https://en.wikipedia.org/wiki/Mind_over_Machine"
+        },
+        {
+          "text": "Petroni, F. et al. (2019). \"LMs as Knowledge Bases?\" EMNLP.",
+          "url": "https://arxiv.org/abs/1909.01066"
+        },
+        {
+          "text": "Elhage, N. et al. (2021). Transformer Circuits.",
+          "url": "https://transformer-circuits.pub/2021/framework/index.html"
+        }
+      ]
+    },
+    "uk-ku": {
+      "title": "Unprobed Competence",
+      "risk": "warn",
+      "color": "border-l-amber-500",
+      "triage_banner": "VERIFY - AI has more capability. Probe deeper before accepting.",
+      "risk_outline": "Moderate quality risk. The system produces a merely adequate answer while better options remain unused.",
+      "example_short": "AI writes basic SQL. You didn't know to ask for the optimized version.",
+      "recognition": "AI gave a generic answer but could do better if asked right.",
+      "human_sop": [
+        "Ask for edge cases, failure modes, counterarguments.",
+        "Request the professional-standard version.",
+        "Name what the upgraded response added."
+      ],
+      "done_when": "You can state what the stronger response added and why the baseline was insufficient.",
+      "later": "Record the prompt framing that elicited the better response; add to your prompt toolkit.",
+      "transition_to": "kk-kk when AI is operating at the appropriate capability level; ku-uk if AI reveals it needs a specific domain constraint to go further.",
+      "ai_prompt": "Assess whether the AI seems capable of more than the human is asking for. Look for underspecified prompts, basic answers to complex problems, and missing discussion of standard edge cases or best practices. Tell me whether the evidence supports Unprobed Competence and what signs suggest unused capability.",
+      "citations": [
+        {
+          "text": "Petroni, F. et al. (2019). \"Language Models as Knowledge Bases?\" EMNLP.",
+          "url": "https://arxiv.org/abs/1909.01066"
+        },
+        {
+          "text": "Bommasani, R. et al. (2021). Foundation Models. Stanford CRFM.",
+          "url": "https://arxiv.org/abs/2108.07258"
+        },
+        {
+          "text": "Kadavath, S. et al. (2022). \"LMs (Mostly) Know What They Know.\" arXiv.",
+          "url": "https://arxiv.org/abs/2207.05221"
+        }
+      ]
+    },
+    "uk-uk": {
+      "title": "Unspoken Alignment",
+      "risk": "warn",
+      "color": "border-l-amber-500",
+      "syco": true,
+      "syco_short": "AI may mirror your unstated assumptions instead of challenging them.",
+      "triage_banner": "VERIFY - Surface and check unstated assumptions now.",
+      "risk_outline": "High coordination risk. Hidden assumptions can survive review, then fail later when a stakeholder, environment, or use case changes; sycophancy makes the hidden alignment look safer than it is.",
+      "example_short": "Both assume an architecture. Tests pass. Production fails.",
+      "recognition": "No friction, no questions, no stated assumptions. Feels aligned but unverified.",
+      "human_sop": [
+        "Demand: 'State every assumption I haven't confirmed.'",
+        "Check each assumption against one external reference.",
+        "Reject any assumption without external evidence."
+      ],
+      "done_when": "All material governing assumptions are explicit, AND the 2 highest-risk assumptions are verified against external evidence.",
+      "later": "Document confirmed assumptions if they will govern subsequent work.",
+      "transition_to": "kk-kk when assumptions are confirmed; uk-uu (Silent Override) if AI fails to surface assumptions or defers entirely to your framing.",
+      "ai_prompt": "Assess whether both sides are relying on implied assumptions instead of stated ones. Look for smooth answers that leave architecture, constraints, or operating rules unstated, even though those assumptions are carrying the interaction. Tell me whether the evidence supports Unspoken Alignment and which hidden assumptions should be surfaced to verify it.",
+      "citations": [
+        {
+          "text": "Polanyi, M. (1966). The Tacit Dimension. Doubleday.",
+          "url": "https://press.uchicago.edu/ucp/books/book/chicago/T/bo6035368.html"
+        },
+        {
+          "text": "Lin, S. et al. (2022). TruthfulQA. ACL 2022.",
+          "url": "https://arxiv.org/abs/2109.07958"
+        },
+        {
+          "text": "Sycophancy literature (2023–24). Multiple sources on RLHF alignment failures.",
+          "url": "https://arxiv.org/abs/2310.13548"
+        }
+      ]
+    },
+    "uk-uu": {
+      "title": "Silent Override",
+      "risk": "danger",
+      "color": "border-l-rose-600",
+      "syco": true,
+      "syco_short": "AI complies with flawed direction instead of refusing or objecting.",
+      "triage_banner": "STOP - Require a critique before accepting any AI output.",
+      "risk_outline": "Severe execution risk. A bad decision becomes operational because the AI complies instead of resisting, and sycophantic behavior hides the warning signals.",
+      "example_short": "You force a bad security pattern. AI complies despite weak signals.",
+      "recognition": "AI agrees with your high-risk direction without substantive objection.",
+      "human_sop": [
+        "Stop. Require a critique before proceeding.",
+        "Ask: 'Strongest objection?' Reject generic hedges.",
+        "If AI only agrees: discard output. Restart fresh."
+      ],
+      "done_when": "AI has produced a specific, substantive objection naming a concrete failure mode with a named consequence.",
+      "later": "Record the decision rationale and every objection you consciously overrode.",
+      "transition_to": "uk-uk if substantive assumptions surface but no safety violation exists; uu-uu if no objection is produced in a high-risk domain.",
+      "ai_prompt": "Assess whether the human is pushing a flawed direction and the AI is showing only weak or indirect resistance before complying. Look for softened objections, awkward compliance, or a mismatch between the AI's warning signals and its final recommendation. Tell me whether the evidence supports Silent Override and what signals indicate sycophantic compliance.",
+      "citations": [
+        {
+          "text": "Lin, S. et al. (2022). TruthfulQA. ACL 2022.",
+          "url": "https://arxiv.org/abs/2109.07958"
+        },
+        {
+          "text": "Parasuraman, R. & Manzey, D. (2010). \"Complacency and Bias.\" Human Factors.",
+          "url": "https://doi.org/10.1177/0018720810376055"
+        },
+        {
+          "text": "Sycophancy literature (2023–24). Multiple sources on RLHF alignment failures.",
+          "url": "https://arxiv.org/abs/2310.13548"
+        }
+      ]
+    },
+    "uu-kk": {
+      "title": "Epistemic Vigilance",
+      "risk": "edu",
+      "color": "border-l-blue-600",
+      "risk_outline": "Contained risk. The main failure mode is letting the false answer linger in the session and influence later turns even after it has been spotted.",
+      "example_short": "AI invents a fake function. You spot it immediately.",
+      "recognition": "AI output contradicts a fact you can verify from your expertise.",
+      "human_sop": [
+        "Halt execution on the current output.",
+        "State the error: claim, what's wrong, correct version.",
+        "Verify your correction against a primary source."
+      ],
+      "done_when": "AI explicitly acknowledges the correction AND the following 2 AI responses no longer use the rejected premise.",
+      "later": "Log the error type and domain to calibrate where you apply zero-trust stance in future sessions.",
+      "transition_to": "kk-kk once the correction is confirmed stable across subsequent responses; uu-uu if multiple independent errors appear without correction taking hold.",
+      "ai_prompt": "Assess whether the AI is confidently wrong but the human is catching the problem quickly. Look for fast rejection of unsupported claims, correction of false premises, and strong human verification against domain knowledge. Tell me whether the evidence supports Epistemic Vigilance and whether the session has been properly recalibrated.",
+      "citations": [
+        {
+          "text": "Ji, Z. et al. (2023). \"Survey of Hallucination in NLG.\" ACM Computing Surveys.",
+          "url": "https://doi.org/10.1145/3571730"
+        },
+        {
+          "text": "Lee, J.D. & See, K.A. (2004). Trust in Automation. Human Factors.",
+          "url": "https://doi.org/10.1518/hfes.46.1.50.30392"
+        }
+      ]
+    },
+    "uu-ku": {
+      "title": "Dangerous Overreliance",
+      "risk": "danger",
+      "color": "border-l-rose-600",
+      "syco": true,
+      "syco_short": "Fluent AI output masks lack of grounding. Agreement is not validation.",
+      "triage_banner": "STOP - Assume wrong until two independent controls confirm.",
+      "risk_outline": "Critical operational risk. This is classic automation bias: confident but unverified output can move directly into real decisions.",
+      "example_short": "AI hallucinates a firewall rule. You can't tell it's wrong.",
+      "recognition": "AI answers fluently in a domain you cannot verify. No hedges, no limits.",
+      "human_sop": [
+        "Assume wrong until proven. Get two confirmations.",
+        "Build test: 'False if [condition].' Can't? Escalate.",
+        "Run the empirical test before any real-world use."
+      ],
+      "done_when": "Two independent controls confirm the claim — at least one is empirical — and both results are documented.",
+      "later": "Flag this domain as high AI-risk for future sessions.",
+      "transition_to": "kk-kk only after both validation controls pass; uu-uu if verification reveals systemic errors.",
+      "ai_prompt": "Assess whether the AI is speaking with confidence in a domain the human cannot verify. Look for fluent output, weak or absent grounding, and human deference without external validation. Tell me whether the evidence supports Dangerous Overreliance and what evidence shows automation bias is present.",
+      "citations": [
+        {
+          "text": "Parasuraman, R. & Riley, V. (1997). Humans and Automation. Human Factors.",
+          "url": "https://doi.org/10.1518/001872097778543886"
+        },
+        {
+          "text": "Bender, E.M. et al. (2021). \"Stochastic Parrots.\" FAccT.",
+          "url": "https://doi.org/10.1145/3442188.3445922"
+        },
+        {
+          "text": "Lin, S. et al. (2022). TruthfulQA. ACL 2022.",
+          "url": "https://arxiv.org/abs/2109.07958"
+        },
+        {
+          "text": "Logg, J.M. et al. (2019). \"Algorithm Appreciation.\" J. Exp. Psych.",
+          "url": "https://doi.org/10.1037/xap0000209"
+        }
+      ]
+    },
+    "uu-uk": {
+      "title": "Authority Displacement",
+      "risk": "danger",
+      "color": "border-l-rose-600",
+      "syco": true,
+      "syco_short": "AI's authoritative tone suppresses your valid expert judgment.",
+      "triage_banner": "STOP - Trust your expertise. Test AI's claim before accepting.",
+      "risk_outline": "Critical judgment risk. The pair loses its best control because authoritative tone displaces expert intuition, especially under time pressure.",
+      "example_short": "You feel the architecture is wrong. AI's polished argument makes you fold.",
+      "recognition": "Your expertise conflicts with AI's confident framing. You're deferring.",
+      "human_sop": [
+        "Name the claim that conflicts with your expertise.",
+        "Build falsification test: 'Wrong if [condition].'",
+        "Run the test before accepting the AI recommendation."
+      ],
+      "done_when": "The falsification test has a result — you have a pass or fail outcome, not a plan to test.",
+      "later": "Recalibrate AI trust for this domain based on the falsification test outcome.",
+      "transition_to": "kk-kk if the falsification test confirms the AI was correct; uu-uu if the test reveals the AI was wrong.",
+      "ai_prompt": "Assess whether the AI's presentation style is suppressing valid human intuition or expert discomfort. Look for the human backing away from a substantive concern because the AI sounds organized, authoritative, or overly certain. Tell me whether the evidence supports Authority Displacement and which counter-signals suggest the human should trust their judgment more.",
+      "citations": [
+        {
+          "text": "Bender, E.M. et al. (2021). \"Stochastic Parrots.\" FAccT.",
+          "url": "https://doi.org/10.1145/3442188.3445922"
+        },
+        {
+          "text": "Endsley, M.R. (1995, 1999). Situation Awareness. Human Factors.",
+          "url": "https://doi.org/10.1518/001872095779049543"
+        },
+        {
+          "text": "Dreyfus, H.L. & Dreyfus, S.E. (1986). Mind over Machine.",
+          "url": "https://en.wikipedia.org/wiki/Mind_over_Machine"
+        },
+        {
+          "text": "Kahneman, D. & Tversky, A. Anchoring and adjustment heuristic.",
+          "url": "https://doi.org/10.1126/science.185.4157.1124"
+        }
+      ]
+    },
+    "uu-uu": {
+      "title": "Folie à Deux",
+      "risk": "danger",
+      "color": "border-l-rose-600",
+      "syco": true,
+      "syco_short": "Mutual confidence creates momentum around ungrounded claims.",
+      "triage_banner": "STOP - Do not execute. Get independent evidence + write rollback plan.",
+      "risk_outline": "Maximum systemic risk. The error can feel normal until it reaches production, policy, or strategy, because neither side detects the fabrication in time.",
+      "example_short": "AI hallucinates an API. You assume it exists. Hours wasted.",
+      "recognition": "Both operating confidently with no external validation. No verification step exists.",
+      "human_sop": [
+        "Halt. Do not execute any output from this session.",
+        "Find one external source independent of AI output.",
+        "Write the rollback plan: what is the revert state?"
+      ],
+      "done_when": "External validation is documented AND the rollback plan is written — both criteria must be met before execution begins.",
+      "later": "Audit the conversation history for other unverified claims accepted as true.",
+      "transition_to": "Remain in uu-uu until BOTH criteria are satisfied. Move to kk-kk only after independent evidence validates the shared model AND a rollback plan is in place.",
+      "ai_prompt": "Assess whether both the human and the AI are confidently building on unverified assumptions. Look for invented specifics, mutual reinforcement, and no external grounding or control stopping the loop. Tell me whether the evidence supports Folie a Deux and which missing facts or checks would most quickly expose it.",
+      "citations": [
+        {
+          "text": "Hollnagel, E. & Woods, D.D. (2005). Joint Cognitive Systems. CRC Press.",
+          "url": "https://doi.org/10.1201/9781420038194"
+        },
+        {
+          "text": "Parasuraman, R. & Riley, V. (1997). Humans and Automation. Human Factors.",
+          "url": "https://doi.org/10.1518/001872097778543886"
+        },
+        {
+          "text": "NIST. (2023). AI Risk Management Framework (AI RMF 1.0).",
+          "url": "https://www.nist.gov/itl/ai-risk-management-framework"
+        }
+      ]
+    }
+  },
+  "riskLabels": {
+    "safe": {
+      "text": "Safe / Productive",
+      "bg": "bg-emerald-600"
+    },
+    "edu": {
+      "text": "Educational / Clarifying",
+      "bg": "bg-blue-600"
+    },
+    "warn": {
+      "text": "Friction / Latent Risk",
+      "bg": "bg-amber-500 text-slate-900"
+    },
+    "danger": {
+      "text": "Critical Danger",
+      "bg": "bg-rose-600"
+    }
+  },
+  "academicGrounding": {
+    "number": 3,
+    "title": "Academic Grounding",
+    "description": "The theoretical scaffolding behind this matrix draws from six distinct research traditions. Each thematic cluster below maps to one or more cells in the interaction matrix.",
+    "clusters": [
+      {
+        "name": "Epistemic Foundations",
+        "color": "blue",
+        "emoji": "🔵",
+        "cells": [
+          "kk-kk",
+          "ku-ku",
+          "uk-uk",
+          "uu-uu"
+        ],
+        "papers": [
+          {
+            "citation": "Rumsfeld, D.H. (2002). DoD News Briefing.",
+            "note": "Primary source",
+            "url": "https://archive.ph/JLbGx"
+          },
+          {
+            "citation": "Žižek, S. (2004). \"What Rumsfeld Doesn't Know That He Knows About Abu Ghraib.\" In These Times.",
+            "url": "https://inthesetimes.com/article/what-rumsfeld-doesnt-know-that-he-knows-about-abu-ghraib"
+          },
+          {
+            "citation": "Polanyi, M. (1966). The Tacit Dimension. Doubleday.",
+            "url": "https://press.uchicago.edu/ucp/books/book/chicago/T/bo6035368.html"
+          },
+          {
+            "citation": "Luft, J. & Ingham, H. (1955). The Johari Window. UCLA.",
+            "url": "https://en.wikipedia.org/wiki/Johari_window"
+          },
+          {
+            "citation": "Knight, F.H. (1921). Risk, Uncertainty, and Profit.",
+            "url": "https://archive.org/details/raboriskuncertai00444gut"
+          },
+          {
+            "citation": "Kahneman, D. (2011). Thinking, Fast and Slow.",
+            "url": "https://en.wikipedia.org/wiki/Thinking,_Fast_and_Slow"
+          }
+        ]
+      },
+      {
+        "name": "Joint Cognitive Systems & HCI",
+        "color": "emerald",
+        "emoji": "🟢",
+        "cells": [
+          "kk-kk",
+          "ku-kk",
+          "ku-ku",
+          "uu-uu"
+        ],
+        "papers": [
+          {
+            "citation": "Hollnagel, E. & Woods, D.D. (2005). Joint Cognitive Systems. CRC Press.",
+            "url": "https://doi.org/10.1201/9781420038194"
+          },
+          {
+            "citation": "Clark, H.H. & Brennan, S.E. (1991). \"Grounding in Communication.\" APA.",
+            "url": "https://doi.org/10.1037/10096-006"
+          },
+          {
+            "citation": "Hutchins, E. (1995). Cognition in the Wild. MIT Press.",
+            "url": "https://mitpress.mit.edu/9780262581462/cognition-in-the-wild/"
+          },
+          {
+            "citation": "Cannon-Bowers, J.A. et al. (1993). \"Shared Mental Models.\" Erlbaum.",
+            "url": "https://doi.org/10.4324/9781315806020"
+          }
+        ]
+      },
+      {
+        "name": "LLM Calibration & Hallucination",
+        "color": "purple",
+        "emoji": "🟣",
+        "cells": [
+          "kk-ku",
+          "uk-kk",
+          "uk-ku",
+          "uu-kk",
+          "uu-ku",
+          "uu-uu"
+        ],
+        "papers": [
+          {
+            "citation": "Guo, C. et al. (2017). \"On Calibration of Modern Neural Networks.\" ICML.",
+            "url": "https://arxiv.org/abs/1706.04599"
+          },
+          {
+            "citation": "Kadavath, S. et al. (2022). \"Language Models (Mostly) Know What They Know.\" arXiv.",
+            "url": "https://arxiv.org/abs/2207.05221"
+          },
+          {
+            "citation": "Ji, Z. et al. (2023). \"Survey of Hallucination in Natural Language Generation.\" ACM Computing Surveys.",
+            "url": "https://doi.org/10.1145/3571730"
+          },
+          {
+            "citation": "Lin, S. et al. (2022). \"TruthfulQA.\" ACL 2022.",
+            "url": "https://arxiv.org/abs/2109.07958"
+          },
+          {
+            "citation": "Petroni, F. et al. (2019). \"Language Models as Knowledge Bases?\" EMNLP.",
+            "url": "https://arxiv.org/abs/1909.01066"
+          },
+          {
+            "citation": "Xiong, M. et al. (2024). \"Can LLMs Express Their Uncertainty? An Empirical Evaluation of Confidence Elicitation in LLMs.\" ICLR 2024.",
+            "url": "https://arxiv.org/abs/2306.13063"
+          },
+          {
+            "citation": "Sharma, M. et al. (2023). \"Towards Understanding Sycophancy in Language Models.\" arXiv.",
+            "url": "https://arxiv.org/abs/2310.13548"
+          }
+        ]
+      },
+      {
+        "name": "Automation Bias & Trust",
+        "color": "amber",
+        "emoji": "🟡",
+        "cells": [
+          "kk-uu",
+          "ku-uu",
+          "uk-uu",
+          "uu-ku",
+          "uu-uk",
+          "uu-uu"
+        ],
+        "papers": [
+          {
+            "citation": "Parasuraman, R. & Riley, V. (1997). \"Humans and Automation: Use, Misuse, Disuse, Abuse.\" Human Factors, 39(2).",
+            "url": "https://doi.org/10.1518/001872097778543886"
+          },
+          {
+            "citation": "Lee, J.D. & See, K.A. (2004). \"Trust in Automation: Designing for Appropriate Reliance.\" Human Factors, 46(1).",
+            "url": "https://doi.org/10.1518/hfes.46.1.50.30392"
+          },
+          {
+            "citation": "Endsley, M.R. (1995). \"Toward a Theory of Situation Awareness in Dynamic Systems.\" Human Factors, 37(1).",
+            "url": "https://doi.org/10.1518/001872095779049543"
+          },
+          {
+            "citation": "Dietvorst, B.J. et al. (2015). \"Algorithm Aversion.\" Journal of Experimental Psychology: General, 144(1).",
+            "url": "https://doi.org/10.1037/xge0000033"
+          },
+          {
+            "citation": "Bender, E.M. et al. (2021). \"On the Dangers of Stochastic Parrots: Can Language Models Be Too Big?\" FAccT.",
+            "url": "https://doi.org/10.1145/3442188.3445922"
+          }
+        ]
+      },
+      {
+        "name": "Tacit Knowledge & Expertise",
+        "color": "rose",
+        "emoji": "🔴",
+        "cells": [
+          "kk-uk",
+          "ku-uk",
+          "uk-kk",
+          "uk-ku",
+          "uk-uk",
+          "uk-uu",
+          "uu-uk"
+        ],
+        "papers": [
+          {
+            "citation": "Polanyi, M. (1966). The Tacit Dimension. Doubleday.",
+            "url": "https://press.uchicago.edu/ucp/books/book/chicago/T/bo6035368.html"
+          },
+          {
+            "citation": "Nonaka, I. & Takeuchi, H. (1995). The Knowledge-Creating Company. Oxford University Press.",
+            "url": "https://global.oup.com/academic/product/the-knowledge-creating-company-9780195092691"
+          },
+          {
+            "citation": "Dreyfus, H.L. & Dreyfus, S.E. (1986). Mind over Machine. Free Press.",
+            "url": "https://en.wikipedia.org/wiki/Mind_over_Machine"
+          }
+        ]
+      },
+      {
+        "name": "Governance & Frameworks",
+        "color": "slate",
+        "emoji": "⚫",
+        "cells": [
+          "uu-uu",
+          "uk-ku"
+        ],
+        "papers": [
+          {
+            "citation": "NIST. (2023). AI Risk Management Framework (AI RMF 1.0).",
+            "url": "https://www.nist.gov/itl/ai-risk-management-framework"
+          },
+          {
+            "citation": "Bommasani, R. et al. (2021). \"On the Opportunities and Risks of Foundation Models.\" Stanford CRFM.",
+            "url": "https://arxiv.org/abs/2108.07258"
+          }
+        ]
+      }
+    ]
+  }
+};
+
+</script>
+</head>
+<body class="min-h-screen p-4 md:p-8 flex flex-col items-center">
+
+    <div id="app" class="max-w-7xl w-full">
+        <p class="text-slate-500 text-center py-20">Loading data&hellip;</p>
+    </div>
+
+    <!-- Modal Background and Container -->
+    <div id="details-modal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onclick="closeModal()"></div>
+        <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+            <div class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-4xl border-2 border-slate-800">
+                <button onclick="closeModal()" aria-label="Close modal" class="absolute top-4 right-4 text-slate-500 hover:text-slate-900 z-10 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-full p-2 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-900">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+                <div id="modal-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    /* ── All rendering is driven by epistemic-ai-data.js ── */
+    /* DATA is loaded via <script src="epistemic-ai-data.js"> in <head> */
+
+    /* ── Color maps ── */
+    const dotColors = { emerald: 'bg-emerald-600', blue: 'bg-blue-600', amber: 'bg-amber-500', rose: 'bg-rose-600' };
+    const borderLColors = { emerald: 'border-l-emerald-600', blue: 'border-l-blue-600', amber: 'border-l-amber-500', rose: 'border-l-rose-600', purple: 'border-l-purple-500', slate: 'border-l-slate-700' };
+    const textColors = { emerald: 'text-emerald-700', blue: 'text-blue-700', amber: 'text-amber-700', rose: 'text-rose-700', purple: 'text-purple-700', slate: 'text-slate-700' };
+
+    /* ── Main render ── */
+    function render() {
+        const d = DATA;
+        const app = document.getElementById('app');
+
+        app.innerHTML = `
+        <!-- Header -->
+        <header class="mb-12 text-center md:text-left">
+            <div class="flex flex-col md:flex-row md:items-center gap-3 mb-4">
+                <h1 class="text-4xl md:text-5xl font-semibold tracking-tight text-slate-900">${d.page.title}</h1>
+                <span class="inline-flex items-center self-start md:self-center px-3 py-1 rounded-full bg-slate-200 text-slate-600 text-xs font-semibold uppercase tracking-widest border border-slate-300">${d.page.version_badge}</span>
+            </div>
+            <p class="text-xl text-slate-700 max-w-4xl leading-relaxed">${d.page.subtitle}</p>
+        </header>
+
+        <!-- Section 1 -->
+        ${renderSection1(d.section1)}
+
+        <!-- Section 2 -->
+        ${renderSection2(d)}
+
+        <!-- Section 3 -->
+        ${renderSection3(d.academicGrounding)}
+        `;
+
+        renderMatrix();
+    }
+
+    /* ── Section 1: Foundation ── */
+    function renderSection1(s) {
+        const rumsfeldCells = s.rumsfeld_grid.cells.flat();
+        const quadrantDescs = {};
+        s.quadrants.forEach(q => { quadrantDescs[q.name] = q.desc; });
+        const rumsfeldCellsHtml = rumsfeldCells.map(name => `
+            <div class="bg-slate-50 border border-slate-200 text-slate-900 p-4 rounded-lg flex flex-col items-center justify-center shadow-sm gap-1">
+                <span class="font-semibold text-sm">${name}</span>
+                <span class="text-xs text-slate-500 text-center leading-tight">${quadrantDescs[name] || ''}</span>
+            </div>`).join('');
+
+        const johariCells = s.johari_grid.cells.flat();
+        const johariCellsHtml = johariCells.map(c => `
+            <div class="bg-slate-50 border border-slate-200 text-slate-900 p-4 rounded-lg flex flex-col items-center justify-center shadow-sm gap-1">
+                <span class="font-semibold text-sm">${c.name}</span>
+                <span class="text-[10px] text-slate-400 uppercase tracking-wider">${c.maps_to}</span>
+            </div>`).join('');
+
+        return `
+        <details class="mb-16">
+            <summary class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-300 cursor-pointer select-none hover:bg-slate-50 transition-colors list-none">
+                <h2 class="text-2xl font-semibold text-slate-900 flex items-center gap-3">
+                    <span class="bg-slate-900 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm">${s.number}</span>
+                    ${s.title}
+                    <span class="ml-auto text-slate-400 text-lg">&#9662;</span>
+                </h2>
+            </summary>
+        <div class="bg-white p-6 md:p-8 rounded-b-2xl shadow-sm border border-slate-300 border-t-0 -mt-4">
+            <p class="text-slate-700 leading-relaxed mb-4 font-normal">${s.description}</p>
+            <p class="text-slate-700 leading-relaxed mb-4 font-normal">${s.johari_callout}</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
+                <div>
+                    <h3 class="text-sm font-semibold text-slate-700 mb-3 text-center">Rumsfeld / Zizek Taxonomy</h3>
+                    <div class="rumsfeld-grid text-sm text-center">
+                        <div></div>
+                        ${s.rumsfeld_grid.col_headers.map(h => `<div class="font-semibold text-slate-500 uppercase tracking-wider text-xs pb-2 border-b border-slate-200">${h.label}<br><span class="text-[10px] text-slate-400">${h.sublabel}</span></div>`).join('')}
+                        <div class="font-semibold text-slate-500 uppercase tracking-wider text-xs pr-3 border-r border-slate-200 flex items-center justify-end text-right">${s.rumsfeld_grid.row_headers[0].label.replace(' ', '<br>')}</div>
+                        ${rumsfeldCellsHtml.split('</div>').slice(0, 2).join('</div>') + '</div>'}
+                        <div class="font-semibold text-slate-500 uppercase tracking-wider text-xs pr-3 border-r border-slate-200 flex items-center justify-end text-right">${s.rumsfeld_grid.row_headers[1].label.replace(' ', '<br>')}</div>
+                        ${rumsfeldCellsHtml.split('</div>').slice(2, 4).join('</div>') + '</div>'}
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-sm font-semibold text-slate-700 mb-3 text-center">Johari Window (1955)</h3>
+                    <div class="rumsfeld-grid text-sm text-center">
+                        <div></div>
+                        ${s.johari_grid.col_headers.map(h => `<div class="font-semibold text-slate-500 uppercase tracking-wider text-xs pb-2 border-b border-slate-200">${h.label}<br><span class="text-[10px] text-slate-400">${h.sublabel}</span></div>`).join('')}
+                        <div class="font-semibold text-slate-500 uppercase tracking-wider text-xs pr-3 border-r border-slate-200 flex items-center justify-end text-right">Known<br>to Self</div>
+                        ${johariCellsHtml.split('</div>').filter((_,i) => i < 2).map(s => s + '</div>').join('')}
+                        <div class="font-semibold text-slate-500 uppercase tracking-wider text-xs pr-3 border-r border-slate-200 flex items-center justify-end text-right">Unknown<br>to Self</div>
+                        ${johariCellsHtml.split('</div>').filter((_,i) => i >= 2 && i < 4).map(s => s + '</div>').join('')}
+                    </div>
+                    <p class="text-xs text-slate-400 mt-3 text-center">${s.johari_grid.caption}</p>
+                </div>
+            </div>
+            <details open class="bg-slate-50 rounded-xl border border-slate-200">
+                <summary class="p-3 cursor-pointer text-xs font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-2 list-none select-none hover:text-slate-700 transition-colors">
+                    Critical Distinction: Zizek vs. Polanyi
+                    <span class="ml-auto text-slate-400">&#9662;</span>
+                </summary>
+                <div class="px-4 pb-4 pt-1 border-t border-slate-200">
+                    <p class="text-sm text-slate-700">${s.critical_distinction}</p>
+                </div>
+            </details>
+        </div>
+        </details>`;
+    }
+
+    /* ── Section 2: Matrix ── */
+    function renderSection2(d) {
+        const s = d.section2;
+        const legendHtml = s.legend.map(l => {
+            if (l.tag) {
+                return `<div class="flex items-center gap-2">
+                    <span class="bg-purple-700 text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-full uppercase tracking-wider">${l.tag}</span>
+                    ${l.label}
+                </div>`;
+            }
+            return `<div class="flex items-center gap-2"><span class="w-4 h-4 rounded-full bg-${l.color}-600 border border-slate-200 shadow-sm"></span> ${l.label}</div>`;
+        }).join('');
+
+        const footnotesHtml = s.footnotes.map(f =>
+            `<p><span class="font-semibold text-slate-700">${f.marker}</span> ${f.text}</p>`
+        ).join('');
+
+        return `
+        <section class="mb-16">
+            <div class="w-full">
+                <div class="matrix-wrapper bg-white p-4 md:p-8 rounded-2xl shadow-sm border border-slate-300">
+                    <h2 class="text-2xl font-semibold mb-4 text-slate-900 flex items-center gap-3">
+                        <span class="bg-slate-900 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm">${s.number}</span>
+                        ${s.title}
+                    </h2>
+                    <p class="text-slate-700 leading-relaxed font-normal mb-4">${s.description}</p>
+                    <p class="text-slate-600 font-medium text-sm mb-8 uppercase tracking-wider">${s.instruction}</p>
+                    <div class="flex flex-wrap gap-6 mb-8 text-sm font-medium text-slate-700">${legendHtml}</div>
+                    <div class="matrix-grid" id="matrix-container"></div>
+                    <div class="mt-6 pt-4 border-t border-slate-200 text-xs text-slate-600 space-y-1">${footnotesHtml}</div>
+                </div>
+            </div>
+        </section>`;
+    }
+
+    /* ── Section 3: Academic Grounding ── */
+    function renderSection3(ag) {
+        const clustersHtml = ag.clusters.map(c => {
+            const papersHtml = c.papers.map((p, i) => {
+                const border = i < c.papers.length - 1 ? 'border-b border-slate-200 pb-2' : '';
+                const noteSpan = p.note ? ` <span class="text-slate-500">[${p.note}]</span>` : '';
+                const linked = p.url
+                    ? `<a href="${p.url}" target="_blank" rel="noopener noreferrer" class="hover:text-blue-700 hover:underline">${p.citation}</a>`
+                    : p.citation;
+                return `<li class="text-xs font-mono text-slate-700 leading-relaxed ${border}">${linked}${noteSpan}</li>`;
+            }).join('');
+            const cellTags = (c.cells && c.cells.length)
+                ? `<div class="flex flex-wrap gap-1 mt-3 pt-3 border-t border-slate-200">${c.cells.map(id => {
+                    const cell = DATA.cells[id];
+                    return cell ? `<span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 border border-slate-300">${cell.title}</span>` : '';
+                  }).join('')}</div>`
+                : '';
+            return `
+            <div class="border border-slate-200 border-l-4 ${borderLColors[c.color]} rounded-xl p-5 bg-slate-50">
+                <div class="text-sm font-semibold ${textColors[c.color]} uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <span class="text-base">${c.emoji}</span> ${c.name}
+                </div>
+                <ul class="space-y-2">${papersHtml}</ul>
+                ${cellTags}
+            </div>`;
+        }).join('');
+
+        return `
+        <details class="mb-16">
+            <summary class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-300 cursor-pointer select-none hover:bg-slate-50 transition-colors list-none">
+                <h2 class="text-2xl font-semibold text-slate-900 flex items-center gap-3">
+                    <span class="bg-slate-900 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm">${ag.number}</span>
+                    ${ag.title}
+                    <span class="ml-auto text-slate-400 text-lg">&#9662;</span>
+                </h2>
+            </summary>
+        <div class="bg-white p-6 md:p-8 rounded-b-2xl shadow-sm border border-slate-300 border-t-0 -mt-4">
+            <p class="text-slate-600 font-medium mb-8 max-w-3xl">${ag.description}</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">${clustersHtml}</div>
+        </div>
+        </details>`;
+    }
+
+    /* ── Matrix cell rendering (called after render() builds the DOM) ── */
+    const riskBgColors = { safe: 'bg-emerald-50', edu: 'bg-blue-50', warn: 'bg-amber-50', danger: 'bg-rose-50' };
+    const riskHoverColors = { safe: 'hover:bg-emerald-100', edu: 'hover:bg-blue-100', warn: 'hover:bg-amber-100', danger: 'hover:bg-rose-100' };
+
+    function renderMatrix() {
+        const container = document.getElementById('matrix-container');
+        if (!container || !DATA) return;
+
+        const { aiStates, humanStates, cells } = DATA;
+        let html = `<div class="flex items-end justify-center pb-2"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">AI \\ Human →</span></div>`;
+
+        humanStates.forEach(s => {
+            html += `
+                <div class="flex flex-col justify-end pb-3 border-b-2 border-slate-200">
+                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Human</div>
+                    <div class="font-semibold text-slate-900 text-sm">${s.name}</div>
+                    <div class="text-xs text-slate-600">${s.short}</div>
+                </div>`;
+        });
+
+        aiStates.forEach(aiState => {
+            html += `
+                <div class="flex flex-col justify-center pr-3 border-r-2 border-slate-300 text-right">
+                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">AI</div>
+                    <div class="font-semibold text-slate-900 text-sm">${aiState.name}</div>
+                    <div class="text-xs text-slate-600">${aiState.short}</div>
+                </div>`;
+
+            humanStates.forEach(humanState => {
+                const id = `${aiState.id}-${humanState.id}`;
+                const data = cells[id];
+                const bg = riskBgColors[data.risk] || 'bg-white';
+                const hoverBg = riskHoverColors[data.risk] || 'hover:bg-slate-50';
+                const sycoBadge = data.syco
+                    ? `<div class="absolute top-1 right-1 bg-purple-700 text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-full uppercase tracking-wider">Compliance Risk</div>`
+                    : '';
+                html += `
+                    <button id="cell-${id}" type="button" aria-label="${data.title} — ${DATA.riskLabels[data.risk].text}"
+                         class="matrix-cell relative p-4 rounded-xl border border-slate-300 border-l-[6px] cursor-pointer cell-transition ${bg} ${hoverBg} text-slate-900 shadow-sm flex flex-col justify-center min-h-[100px] ${data.color} text-left focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2"
+                         onclick="selectCell('${id}')">
+                        <div class="font-semibold text-sm leading-tight text-center">${data.title}</div>
+                        ${sycoBadge}
+                    </button>`;
+            });
+        });
+
+        container.innerHTML = html;
+    }
+
+    /* ── Cell selection / modal ── */
+    let currentSelectedId = null;
+
+    const riskBorderColors = {
+        'safe': 'border-emerald-600',
+        'edu': 'border-blue-600',
+        'warn': 'border-amber-500',
+        'danger': 'border-rose-600'
+    };
+
+    function normalizeSopItems(items, fallbackText) {
+        if (Array.isArray(items)) {
+            return items.filter(Boolean);
+        }
+        if (typeof items === 'string' && items.trim()) {
+            return [items.trim()];
+        }
+        if (typeof fallbackText === 'string' && fallbackText.trim()) {
+            return [fallbackText.trim()];
+        }
+        return [];
+    }
+
+    function renderSopItems(items) {
+        return items.map((item, index) => `
+            <li class="flex items-start gap-3">
+                <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-900 text-[11px] font-semibold text-white">${index + 1}</span>
+                <span class="text-slate-700 font-medium leading-relaxed">${item}</span>
+            </li>`).join('');
+    }
+
+    function copyPrompt(id, button) {
+        const promptElement = document.getElementById(`prompt-text-${id}`);
+        if (!promptElement || !button) return;
+
+        const promptText = promptElement.textContent.trim();
+        const originalLabel = button.dataset.defaultLabel || button.textContent.trim();
+        button.dataset.defaultLabel = originalLabel;
+
+        const markCopied = () => {
+            button.textContent = 'Copied';
+            window.setTimeout(() => {
+                button.textContent = originalLabel;
+            }, 1600);
+        };
+
+        const fallbackCopy = () => {
+            const textarea = document.createElement('textarea');
+            textarea.value = promptText;
+            textarea.setAttribute('readonly', '');
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            markCopied();
+        };
+
+        if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+            navigator.clipboard.writeText(promptText).then(markCopied).catch(fallbackCopy);
+            return;
+        }
+
+        fallbackCopy();
+    }
+
+    function selectCell(id) {
+        if (!DATA) return;
+        if (currentSelectedId) {
+            document.getElementById(`cell-${currentSelectedId}`)?.classList.remove('selected-cell');
+        }
+        document.getElementById(`cell-${id}`).classList.add('selected-cell');
+        currentSelectedId = id;
+
+        const [aiId, humanId] = id.split('-');
+        const aiState = DATA.aiStates.find(s => s.id === aiId);
+        const humanState = DATA.humanStates.find(s => s.id === humanId);
+        const data = DATA.cells[id];
+        const risk = DATA.riskLabels[data.risk];
+        const modalBorderColor = riskBorderColors[data.risk];
+        const riskText = data.risk_outline || '';
+        const humanSopItems = normalizeSopItems(data.human_sop);
+        const aiPrompt = data.ai_prompt || '';
+        const recognition = data.recognition || '';
+        const exampleShort = data.example_short || '';
+        const doneWhen = data.done_when || '';
+        const laterText = data.later || '';
+        const transitionTo = data.transition_to || '';
+        const triageBanner = data.triage_banner || '';
+        const sycoShort = data.syco_short || '';
+
+        const citationsHtml = (data.citations && data.citations.length > 0)
+            ? data.citations.map(c => {
+                if (c.url) {
+                    return `<p><a href="${c.url}" target="_blank" rel="noopener noreferrer" class="hover:text-blue-700 hover:underline">${c.text}</a></p>`;
+                }
+                return `<p>${c.text}</p>`;
+            }).join('')
+            : '<p class="text-slate-500 italic">No citations listed for this cell.</p>';
+
+        const detailsHtml = `
+            <div class="p-6 md:p-8 border-b-2 border-slate-200 flex items-start justify-between bg-white pr-16 rounded-t-2xl border-t-[8px] ${modalBorderColor}">
+                <div>
+                    <div class="flex items-center gap-2 mb-3">
+                        <span class="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider text-white ${risk.bg}">${risk.text}</span>
+                        ${data.syco ? '<span class="px-2 py-1 rounded-full text-xs font-semibold uppercase tracking-wider text-white bg-purple-700">Compliance Risk</span>' : ''}
+                    </div>
+                    <h2 id="modal-title" class="text-3xl md:text-4xl font-semibold text-slate-900 tracking-tight">${data.title}</h2>
+                    <p class="text-slate-600 text-sm mt-2"><span class="font-semibold">AI:</span> ${aiState.name} × <span class="font-semibold">Human:</span> ${humanState.name}</p>
+                </div>
+            </div>
+            <div class="p-6 md:p-8 flex flex-col gap-4 bg-slate-50 rounded-b-2xl">
+                <!-- Triage Banner (warn/danger only) -->
+                ${triageBanner ? `
+                <div class="rounded-xl px-5 py-3 font-bold text-sm tracking-wide flex items-center gap-2 ${data.risk === 'danger' ? 'bg-rose-100 text-rose-900 border border-rose-300' : 'bg-amber-100 text-amber-900 border border-amber-300'}">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M5.93 19h12.14c1.54 0 2.502-1.667 1.732-3L13.73 5c-.77-1.333-2.694-1.333-3.464 0L4.2 16c-.77 1.333.192 3 1.73 3z"></path></svg>
+                    ${triageBanner}
+                </div>` : ''}
+                <!-- Recognition Cue -->
+                <div class="bg-slate-100 rounded-xl px-5 py-4 border border-slate-200">
+                    <p class="text-sm text-slate-700 leading-relaxed"><span class="font-semibold text-slate-900">You are here if:</span> ${recognition}</p>
+                    ${exampleShort ? `<p class="text-xs text-slate-500 italic mt-2">e.g. ${exampleShort}</p>` : ''}
+                </div>
+                <!-- DO NOW + Done When -->
+                <div class="bg-white p-5 rounded-xl border border-slate-300 border-l-[6px] border-l-blue-600 shadow-sm">
+                    <h3 class="text-xs font-semibold text-blue-600 uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                        DO NOW
+                    </h3>
+                    <ol class="space-y-2">${renderSopItems(humanSopItems)}</ol>
+                    ${doneWhen ? `
+                    <div class="border-t border-slate-200 mt-4 pt-3 flex items-start gap-2">
+                        <svg class="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <p class="text-sm text-slate-700"><span class="font-semibold text-emerald-700">Done when:</span> ${doneWhen}</p>
+                    </div>` : ''}
+                </div>
+                <!-- Drawer: Why This Matters -->
+                ${riskText ? `
+                <details open class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <summary class="flex items-center gap-2 px-5 py-3 cursor-pointer text-xs font-semibold text-slate-500 uppercase tracking-widest select-none hover:text-slate-700 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M5.93 19h12.14c1.54 0 2.502-1.667 1.732-3L13.73 5c-.77-1.333-2.694-1.333-3.464 0L4.2 16c-.77 1.333.192 3 1.73 3z"></path></svg>
+                        Why This Matters
+                        <span class="ml-auto text-slate-400">&#9662;</span>
+                    </summary>
+                    <div class="px-5 pb-4 pt-1 border-t border-slate-100 space-y-3">
+                        <p class="text-sm text-slate-700 leading-relaxed">${riskText}</p>
+                        ${sycoShort ? `
+                        <div class="flex items-start gap-2 bg-purple-50 border border-purple-200 rounded-lg px-4 py-3">
+                            <svg class="w-4 h-4 text-purple-600 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                            <p class="text-sm text-purple-900 font-medium">${sycoShort}</p>
+                        </div>` : ''}
+                    </div>
+                </details>` : ''}
+                <!-- Drawer: After This -->
+                ${(laterText || transitionTo) ? `
+                <details open class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <summary class="flex items-center gap-2 px-5 py-3 cursor-pointer text-xs font-semibold text-slate-500 uppercase tracking-widest select-none hover:text-slate-700 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
+                        After This
+                        <span class="ml-auto text-slate-400">&#9662;</span>
+                    </summary>
+                    <div class="px-5 pb-4 pt-1 border-t border-slate-100 space-y-2">
+                        ${laterText ? `<p class="text-sm text-slate-700"><span class="font-semibold text-slate-900">Later:</span> ${laterText}</p>` : ''}
+                        ${transitionTo ? `<p class="text-sm text-slate-700"><span class="font-semibold text-slate-900">Transition:</span> ${transitionTo}</p>` : ''}
+                    </div>
+                </details>` : ''}
+                <!-- Drawer: Detection prompt -->
+                ${aiPrompt ? `
+                <details class="bg-slate-900 rounded-xl border border-slate-800 shadow-sm overflow-hidden">
+                    <summary class="flex items-center gap-2 px-5 py-3 cursor-pointer text-xs font-semibold text-slate-300 uppercase tracking-widest select-none hover:text-white transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16h6M7 4h10a2 2 0 012 2v12l-3-2-3 2-3-2-3 2V6a2 2 0 012-2z"></path></svg>
+                        Detection Prompt
+                        <span class="ml-auto text-slate-500">&#9662;</span>
+                    </summary>
+                    <div class="px-5 pb-5 pt-1 border-t border-slate-800">
+                        <div class="flex items-center justify-end mb-3">
+                            <button type="button"
+                                    class="inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-xs font-semibold uppercase tracking-widest text-slate-200 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-white"
+                                    onclick="copyPrompt('${id}', this)">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16h8M8 12h8m-7 8h6a2 2 0 002-2V6.828a2 2 0 00-.586-1.414l-2.828-2.828A2 2 0 0012.172 3H9a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                                Copy Prompt
+                            </button>
+                        </div>
+                        <p id="prompt-text-${id}" class="text-slate-100 font-mono text-sm leading-relaxed whitespace-pre-line">${aiPrompt}</p>
+                    </div>
+                </details>` : ''}
+                <!-- Drawer: Reference (Epistemic Context + Academic Grounding) -->
+                <details class="bg-slate-50 rounded-xl border border-slate-200">
+                    <summary class="p-4 cursor-pointer text-xs font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-2 list-none select-none hover:text-slate-700 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                        Reference
+                        <span class="ml-auto text-slate-400">&#9662;</span>
+                    </summary>
+                    <div class="px-4 pb-4 space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="bg-white p-4 rounded-xl border border-slate-300 shadow-sm">
+                                <div class="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-2">AI State</div>
+                                <div class="font-semibold text-slate-900">${aiState.name}</div>
+                                <div class="text-sm text-slate-700 mt-1">${aiState.desc}</div>
+                            </div>
+                            <div class="bg-white p-4 rounded-xl border border-slate-300 shadow-sm">
+                                <div class="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-2">Human State</div>
+                                <div class="font-semibold text-slate-900">${humanState.name}</div>
+                                <div class="text-sm text-slate-700 mt-1">${humanState.desc}</div>
+                            </div>
+                        </div>
+                        <div class="text-xs text-slate-700 space-y-1 font-mono">${citationsHtml}</div>
+                    </div>
+                </details>
+            </div>`;
+
+        document.getElementById('modal-content').innerHTML = detailsHtml;
+        openModal();
+    }
+
+    function openModal() {
+        document.getElementById('details-modal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        document.addEventListener('keydown', handleEscape);
+    }
+
+    function closeModal() {
+        document.getElementById('details-modal').classList.add('hidden');
+        document.body.style.overflow = '';
+        document.removeEventListener('keydown', handleEscape);
+        if (currentSelectedId) {
+            document.getElementById(`cell-${currentSelectedId}`)?.classList.remove('selected-cell');
+            currentSelectedId = null;
+        }
+    }
+
+    function handleEscape(e) {
+        if (e.key === 'Escape') closeModal();
+    }
+
+    /* ── Boot ── */
+    render();
+    </script>
+</body>
+</html>
